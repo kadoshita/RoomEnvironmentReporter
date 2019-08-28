@@ -1,0 +1,2 @@
+# RoomEnvironmentReporter
+M5StickCに繋いだ気圧・温度センサの値をInfluxDBに記録するプログラム
