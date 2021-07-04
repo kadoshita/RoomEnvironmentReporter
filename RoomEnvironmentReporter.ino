@@ -2,14 +2,23 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WebServer.h>
+#include "Adafruit_Sensor.h"
+#include <Adafruit_BMP280.h>
 
 
 
 WebServer server(80);
 
+Adafruit_BMP280 bmp280;
+
 void handleStatus()
 {
-  server.send(200, "application/json", "{\"status\":\"OK\"}");
+  char body[255] = {0};
+  float temperature = bmp280.readTemperature();
+  float pressure = bmp280.readPressure() / 100;
+  float battery_level = M5.Axp.GetVbatData() * 1.1 / 1000;
+  sprintf(body, "{\"status\":\"OK\",\"temperature\":%f,\"pressure\":%f,\"battery_level\":%f}", temperature, pressure, battery_level);
+  server.send(200, "application/json", body);
 }
 void setup()
 {
@@ -25,17 +34,26 @@ void setup()
   while (WiFi.status() != WL_CONNECTED)
   {
     digitalWrite(10, HIGH);
-    delay(500);
+    delay(200);
     digitalWrite(10, LOW);
-    delay(500);
+    delay(200);
   }
-  digitalWrite(10, LOW);
+
+  while (!bmp280.begin(0x77))
+  {
+    digitalWrite(10, HIGH);
+    delay(200);
+    digitalWrite(10, LOW);
+    delay(200);
+  }
+
+  digitalWrite(10, HIGH);
+  M5.begin();
+  M5.Lcd.fillScreen(BLACK);
+  M5.Axp.ScreenBreath(0);
 
   server.on("/status", handleStatus);
   server.begin();
-
-  M5.begin();
-  M5.Lcd.print("Test");
 }
 
 void loop()
